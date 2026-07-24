@@ -56,10 +56,29 @@ Network    Arc Testnet, chainId 5042002
 **Note the network: Arc *Testnet*, not mainnet.** Do not assume a mainnet deployment.
 
 **The registry is an upgradeable EIP-1967 proxy** (implementation
-`0x7274e874ca62410a93bd8bf61c69d8045e399c02` as of 2026-07-23). Its admin can change the
-registry's behaviour, including in principle what `tokenURI` and `ownerOf` return. We neither
-control that registry nor represent its upgrade behaviour as fixed. This is disclosed for the same
-reason the agent's own due-diligence tooling flags owner-power on third-party contracts.
+`0x7274e874ca62410a93bd8bf61c69d8045e399c02`, read from the EIP-1967 implementation slot and
+confirmed unchanged on 2026-07-24). Its upgrade authority can change the registry's behaviour,
+including in principle what `tokenURI` and `ownerOf` return. We neither control that registry nor
+represent its upgrade behaviour as fixed. This is disclosed for the same reason the agent's own
+due-diligence tooling flags owner-power on third-party contracts.
+
+> ### ⚠️ The empty admin slot does NOT mean "not upgradeable"
+>
+> If you check the standard EIP-1967 **admin** slot
+> (`0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103`) on this registry, it reads
+> **all zeros**. That is easy to misread as "no admin, therefore immutable." **It is not.**
+>
+> This is not a Transparent proxy, where an admin address is stored at that slot. The
+> implementation slot is populated (see above) and the proxy itself is only ~130 bytes of
+> delegating bytecode, which is the UUPS pattern: **upgrade authority lives inside the
+> implementation contract**, typically behind an owner or role check, not at the admin slot. An
+> empty admin slot is what UUPS looks like — it is the absence of a *storage location*, not the
+> absence of *upgrade power*.
+>
+> So: **do not conclude immutability from a zero at that slot.** To assess who can upgrade this
+> registry, inspect the implementation's own authorisation logic. We are pointing this out
+> precisely because the naive check returns a reassuring-looking answer that is wrong, and we would
+> rather you not be misled by it in our favour.
 
 ## How to verify
 
