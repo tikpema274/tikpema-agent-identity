@@ -23,22 +23,44 @@ custodial Circle developer-controlled wallet**. The operator, through Circle, ca
 it. There is no offline cold key. Ownership alone is not tamper-evidence — the tamper-evidence
 comes from content-addressing plus on-chain anchoring, which is what this repository lets you check.
 
-## ⚠️ Status: NOT YET REGISTERED ON-CHAIN
+## ✅ Status: REGISTERED ON-CHAIN — `agentId 851823`
 
-**No `agentId` exists yet.** The document asserts `tokenURI(agentId) == <the CID above>`, but
-registration has not happened, so **there is currently no on-chain id to query and the verification
-chain below cannot be completed end to end.**
+The document has been registered. The canonical identity is:
 
-What that means for a reader, stated bluntly:
+```
+agentId    851823
+Registry   0x8004A818BFB912233c491871b3d84c89A494BD9e   (IdentityRegistry)
+Network    Arc Testnet, chainId 5042002
+```
 
-- You **can** verify today that these bytes hash to `6e239a3d…` and address to `bafkreidoeond3…`.
-  That is a real, self-contained check and it is the reason this mirror exists.
-- You **cannot** yet verify that any on-chain identity points at this document, because none does.
-- **This repository is therefore a source copy, not proof of an on-chain identity.** Do not read
-  its existence as evidence that the agent is registered. It is not.
+**Both self-referential invariants were confirmed by a read-only `eth_call` against the registry:**
 
-This section will be updated with the concrete `agentId` once registration occurs. Until you see
-one here *and* can confirm it yourself against the registry, assume unregistered.
+```
+ownerOf(851823)  == 0xc54d47211997aca90ef4fcfbc742a3b511b4e621
+tokenURI(851823) == ipfs://bafkreidoeond3akvswce3e425o5grfygsvrfyleqkwathio4ae6y6vujae
+```
+
+The `tokenURI` equals the CID at the top of this file, which closes the document's central claim
+(`tokenURI(agentId) == <the CID of this exact document>`). **The full verification chain can now be
+walked end to end** — see [How to verify](#how-to-verify) below; you no longer have to stop at the
+content-address check.
+
+Verify it yourself, trusting no server we run:
+
+```sh
+# read the on-chain pointer directly — substitute any Arc Testnet RPC
+cast call 0x8004A818BFB912233c491871b3d84c89A494BD9e \
+  "tokenURI(uint256)(string)" 851823 --rpc-url https://rpc.testnet.arc.network
+# expect ipfs://bafkreidoeond3akvswce3e425o5grfygsvrfyleqkwathio4ae6y6vujae
+
+cast call 0x8004A818BFB912233c491871b3d84c89A494BD9e \
+  "ownerOf(uint256)(address)" 851823 --rpc-url https://rpc.testnet.arc.network
+# expect 0xc54d47211997aca90ef4fcfbc742a3b511b4e621
+```
+
+**This repository is still a mirror and still carries no authority** (see below): the on-chain
+`tokenURI` is what proves the identity, not this file. What changed is that there is now an
+`agentId` to point at, and it resolves to these exact bytes.
 
 ## The authoritative pointer is on-chain, not here
 
@@ -127,9 +149,10 @@ install IPFS at all.
 curl -sL https://ipfs.io/ipfs/bafkreidoeond3akvswce3e425o5grfygsvrfyleqkwathio4ae6y6vujae | sha256sum
 ```
 
-**Complete the chain (once an `agentId` exists):**
+**Complete the chain (`agentId 851823`):**
 
-1. Read `tokenURI(agentId)` from the IdentityRegistry on-chain.
+1. Read `tokenURI(851823)` from the IdentityRegistry on-chain — expect
+   `ipfs://bafkreidoeond3…` (confirmed on-chain; see the command in the Status section).
 2. Fetch the bytes at that `ipfs://` CID.
 3. Hash the bytes and confirm they match the CID.
 4. Trust *that* text — not any server response, including this repository.
@@ -140,17 +163,19 @@ If step 1 returns a CID other than `bafkreidoeond3…`, then this mirror is stal
 ### Identifying the canonical identity
 
 The document cannot name its own `agentId` — the id is minted by registering the document as
-`metadataUri`, so the id does not exist until after the bytes are fixed. The canonical identity is
-therefore whichever satisfies **both** conditions:
+`metadataUri`, so the id did not exist until after the bytes were fixed. The canonical identity is
+**`agentId 851823`**, being the one that satisfies **both** conditions:
 
 ```
-ownerOf(agentId)  == 0xc54d47211997aca90ef4fcfbc742a3b511b4e621
-tokenURI(agentId) == bafkreidoeond3akvswce3e425o5grfygsvrfyleqkwathio4ae6y6vujae
+ownerOf(851823)  == 0xc54d47211997aca90ef4fcfbc742a3b511b4e621
+tokenURI(851823) == bafkreidoeond3akvswce3e425o5grfygsvrfyleqkwathio4ae6y6vujae
 ```
 
-**The `tokenURI` half is the discriminator.** Two earlier orphan identities are owned by that same
-wallet but carry a *different* `tokenURI`. Anyone scanning the registry by owner address will find
-them; owner alone does not identify the canonical record.
+**The `tokenURI` half is the discriminator.** Two earlier orphan identities — **`602428` and
+`850337`** — are owned by that same wallet but carry a *different* `tokenURI`
+(`bafkreibdi6623n…`, the quickstart document). Anyone scanning the registry by owner address will
+find all three; owner alone does not identify the canonical record, and only `851823` carries the
+`tokenURI` above.
 
 The address `0xc85b3d9BdEb3703c5778E817b8bC30c96f1cB006` appears in older material as a
 "cold owner". **It was never the on-chain owner. It is stale and must not be used.**
