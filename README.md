@@ -1,7 +1,18 @@
-# Tikpema Agent — ERC-8004 identity document (public mirror)
+# Tikpema — ERC-8004 identity documents (public mirror)
 
-This repository publishes one file, [`unified.json`](./unified.json), so that anyone can
-reproduce its content address from source and check it against what is anchored on-chain.
+This repository publishes **two** frozen ERC-8004 identity documents, so that anyone can reproduce
+each one's content address from source and check it against what is anchored on-chain.
+
+| document | subject | agentId |
+| --- | --- | --- |
+| [`unified.json`](./unified.json) | **Tikpema Agent** — the custodial agent system that moves funds | `851823` |
+| [`dd-service.json`](./dd-service.json) | **Tikpema DD Service** — read-only on-chain due diligence | `851891` |
+
+**Both identities are owned by the same wallet**, so the owner discriminates nothing between them
+and the `tokenURI` is what tells them apart — see **Two identities, one owner** below.
+
+Everything from here down to *Tikpema DD Service* concerns [`unified.json`](./unified.json) and
+`agentId 851823`. The DD-service document has its own section after it.
 
 ```
 sha256  6e239a3d815595844d939aebba68970695625c2c90558133a1dc013d8f568901
@@ -180,6 +191,156 @@ find all three; owner alone does not identify the canonical record, and only `85
 The address `0xc85b3d9BdEb3703c5778E817b8bC30c96f1cB006` appears in older material as a
 "cold owner". **It was never the on-chain owner. It is stale and must not be used.**
 
+---
+
+# Tikpema DD Service — [`dd-service.json`](./dd-service.json)
+
+```
+sha256  d3734accb6390a361df2daf87b49c41d4a44d30bfc9285f47be3c3284dbb402f
+CID     bafkreigtonfmznrzbi3b34w27b5utra5jjcngc74skc7i67dymue3o2af4
+        (CIDv1, raw codec, 28628 bytes)
+IPFS    ipfs://bafkreigtonfmznrzbi3b34w27b5utra5jjcngc74skc7i67dymue3o2af4
+```
+
+## What this document is
+
+The ERC-8004 identity metadata for the **Tikpema DD Service**, version **1.0.0**. In the document's
+own words, it is *"a read-only on-chain due-diligence service. Given a contract address on Arc, it
+returns an INVENTORY of what the contract's privileged holder can do to a depositor — enumerated
+from the deployed bytecode — together with a machine-generated manifest of what it did NOT check.
+It emits no verdict, no score and no recommendation."*
+
+Its reputation subject is therefore **report accuracy and honest bounding — not "verdict accuracy",
+because the service emits no verdicts.** Scoring it on verdicts would invent a product it does not
+offer.
+
+The document publishes **three** distinct independence limits rather than one, and they are worth
+reading before trusting any report it produces:
+
+1. **Operator** — same operator as the Tikpema agent. *"This is not an independent auditor."*
+2. **Code** — *"the auditor shares code with the audited system."* The analyzer and the production
+   deposit gate both import the same fact-production primitive, so a blind spot in the shared
+   catalogue is invisible to **both at once**.
+3. **Data source** — multi-endpoint quorum independence is *asserted, not proven*; every report
+   carries `independenceVerified: false`.
+
+## ✅ Status: REGISTERED ON-CHAIN — `agentId 851891`
+
+The document has been registered. The canonical identity is:
+
+```
+agentId    851891
+Registry   0x8004A818BFB912233c491871b3d84c89A494BD9e   (IdentityRegistry)
+Network    Arc Testnet, chainId 5042002
+tx         0xd33cb296ba2dcc68c29e29cef055f9b959973b11eea3d0a97dadfa9437db20f1
+```
+
+**Confirmed by a read-only `eth_call` against the registry:**
+
+```
+ownerOf(851891)  == 0xc54d47211997aca90ef4fcfbc742a3b511b4e621
+tokenURI(851891) == ipfs://bafkreigtonfmznrzbi3b34w27b5utra5jjcngc74skc7i67dymue3o2af4
+```
+
+The `tokenURI` equals the CID at the top of this section, which closes the document's central claim
+(`tokenURI(agentId) == <the CID of this exact document>`).
+
+Verify it yourself, trusting no server we run:
+
+```sh
+# read the on-chain pointer directly — substitute any Arc Testnet RPC
+cast call 0x8004A818BFB912233c491871b3d84c89A494BD9e \
+  "tokenURI(uint256)(string)" 851891 --rpc-url https://rpc.testnet.arc.network
+# expect ipfs://bafkreigtonfmznrzbi3b34w27b5utra5jjcngc74skc7i67dymue3o2af4
+
+cast call 0x8004A818BFB912233c491871b3d84c89A494BD9e \
+  "ownerOf(uint256)(address)" 851891 --rpc-url https://rpc.testnet.arc.network
+# expect 0xc54d47211997aca90ef4fcfbc742a3b511b4e621
+```
+
+> ### ⚠️ The document says "NOTHING REGISTERED" — that is expected, not a contradiction
+>
+> `dd-service.json` states: `NO WALLET CREATED, NOTHING REGISTERED, NO agentId EXISTS FOR THIS
+> SERVICE`. **That was true when the bytes were frozen, and it can never be updated.** The document
+> is content-addressed, so "correcting" it would change its CID and thereby break the very claim its
+> `tokenURI` anchors.
+>
+> The registration is recorded **here instead** — which the document itself designates: *"the owner
+> is recorded in the public mirror's README after registration, which is outside the CID precisely
+> so it can be."* Where the frozen text and this section differ on registration status, the frozen
+> text is a **snapshot taken before registration** and this section is current. Nothing about the
+> engine's described behaviour, limits or coverage is affected.
+
+## Reproduce the content address from source
+
+```sh
+curl -sL https://raw.githubusercontent.com/tikpema274/tikpema-agent-identity/main/dd-service.json -o dd-service.json
+
+sha256sum dd-service.json
+# expect d3734accb6390a361df2daf87b49c41d4a44d30bfc9285f47be3c3284dbb402f
+
+ipfs add --only-hash --cid-version=1 --raw-leaves dd-service.json
+# expect bafkreigtonfmznrzbi3b34w27b5utra5jjcngc74skc7i67dymue3o2af4
+```
+
+**The same flag caveat applies as for `unified.json`** — `--cid-version=1 --raw-leaves` are
+required, and a `bafybei…` or `Qm…` result means the invocation differed, not that the file is
+wrong. See the warning in [How to verify](#how-to-verify) above.
+
+**Fetch independently from IPFS** — via any gateway, or your own node:
+
+```sh
+curl -sL https://ipfs.io/ipfs/bafkreigtonfmznrzbi3b34w27b5utra5jjcngc74skc7i67dymue3o2af4 | sha256sum
+```
+
+## Identifying the canonical identity — `tokenURI` is the *only* discriminator
+
+As with the agent document, `dd-service.json` cannot name its own `agentId`: the id is minted by
+registering the document, so it did not exist until after the bytes were fixed.
+
+**But the test here is one-sided, and deliberately so.** `dd-service.json` **declares no owner
+address at all** — when it was frozen, the wallet decision had not been made, and naming one would
+have asserted something not yet true. So:
+
+```
+tokenURI(851891) == bafkreigtonfmznrzbi3b34w27b5utra5jjcngc74skc7i67dymue3o2af4
+```
+
+**is the whole test.** That single condition is sufficient, because the CID is a pure function of
+these bytes — no other document can satisfy it. Do **not** expect a two-condition
+`owner + tokenURI` check from these bytes the way `unified.json` supports one; the owner is
+recorded in this README precisely because it is outside the CID.
+
+# Two identities, one owner — and why that is stated plainly
+
+`851823` and `851891` are owned by **the same wallet**:
+
+```
+ownerOf(851823) == ownerOf(851891) == 0xc54d47211997aca90ef4fcfbc742a3b511b4e621
+```
+
+**The owner therefore identifies nothing.** Anyone scanning the registry by owner address will find
+`851823`, `851891`, and two earlier orphans (`602428`, `850337`) — four identities, one address.
+Only the `tokenURI` separates them:
+
+| agentId | tokenURI | document |
+| --- | --- | --- |
+| `851823` | `bafkreidoeond3…` | `unified.json` — the agent |
+| `851891` | `bafkreigton…` | `dd-service.json` — the DD service |
+| `602428`, `850337` | `bafkreibdi6623n…` | orphans (quickstart document) |
+
+This is **shared operator, separate subjects**, and the DD document states the consequence directly:
+
+> *"That identity's reputation concerns an agent that MOVES FUNDS — swaps, bridges, vault deposits,
+> x402 purchases. This service's reputation concerns whether its READ-ONLY REPORTS were accurate and
+> honestly bounded. Good swap execution is not evidence of good reporting and vice versa. The two
+> must not be merged into one score, and a reader should not transfer trust between them."*
+
+So: **do not transfer trust between these two identities.** A record of correct fund movement says
+nothing about report accuracy, and vice versa. They share an operator and a wallet — nothing more.
+
+---
+
 ## The pointer is mutable — and that is disclosed, not hidden
 
 The identity owner can call `setAgentURI(agentId, newCid)` and re-point the identity at any time.
@@ -191,9 +352,9 @@ This document does **not** claim otherwise. What remains true regardless:
 
 ## Editing rules
 
-**`unified.json` MUST NOT BE EDITED. Not one byte.**
+**Neither `unified.json` nor `dd-service.json` MAY BE EDITED. Not one byte. Either of them.**
 
-The document is **self-referential**: it asserts that `tokenURI(agentId)` equals the CID of *this
+Each document is **self-referential**: it asserts that `tokenURI(agentId)` equals the CID of *that
 exact document*. The CID is a pure function of the bytes, so **any** change makes its own central
 claim false — including changes that look like nothing at all:
 
@@ -207,9 +368,12 @@ supersede with a new CID; they never edit in place.** This repository is committ
 `* -text` in `.gitattributes` specifically so that git cannot normalise line endings on any
 platform.
 
-**`README.md` is NOT part of the CID** and can be edited freely — correcting, expanding, or
-updating this text has no effect on the document's content address. That asymmetry is deliberate:
-everything that must stay fixed lives in `unified.json`, and everything explanatory lives here.
+**`README.md` is NOT part of any CID** and can be edited freely — correcting, expanding, or
+updating this text has no effect on either document's content address. That asymmetry is
+deliberate: everything that must stay fixed lives in the two frozen documents, and everything
+explanatory lives here. It is also load-bearing — `dd-service.json` declares no owner and was
+frozen before registration, so this README is where its owner and `agentId` are recorded, by the
+frozen document's own explicit design.
 
 ## Provenance
 
